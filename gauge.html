@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced Animated Gauge Chart with Green Gradient</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            background-color: #ffffff; /* Set background color to white */
+        }
+        .needle, .needle-center {
+            fill: #de2d26;
+        }
+        .percentage {
+            fill: #000;
+            font-size: 24px;
+            text-anchor: middle;
+        }
+        .sidebar-btn {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #f4f4f4; /* Neutral background for buttons */
+            color: #333; /* Dark grey text for better contrast */
+            border: 1px solid #ccc; /* Light grey border for definition */
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .sidebar-btn:hover {
+            background-color: #e0e0e0; /* Slightly darker grey on hover */
+        }
+    </style>
+</head>
+<body>
+    <h2>PLACEMENT PERCENTAGE</h2>
+    <svg width="350" height="400"></svg>
+    <script>
+        var svg = d3.select("svg"),
+            width = +svg.attr("width"),
+            height = +svg.attr("height"),
+            radius = Math.min(width, height) / 2;
+
+        var g = svg.append("g").attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+        var angleScale = d3.scaleLinear()
+            .range([-Math.PI / 2, Math.PI / 2])
+            .domain([0, 100]);
+
+        var arc = d3.arc()
+            .innerRadius(radius - 30)
+            .outerRadius(radius)
+            .startAngle(-Math.PI / 2);
+
+        var background = g.append("path")
+            .datum({endAngle: Math.PI / 2})
+            .style("fill", "#ddd")
+            .attr("d", arc);
+
+        var foreground = g.append("path")
+            .datum({endAngle: -Math.PI / 2})
+            .style("fill", "url(#gaugeGradient)")
+            .attr("d", arc);
+
+        var needleLen = radius - 25;
+        var needle = g.append('line')
+            .attr('x1', 0)
+            .attr('y1', 0)
+            .attr('x2', 0)
+            .attr('y2', -needleLen)
+            .attr('stroke', '#de2d26')
+            .attr('stroke-width', 3)
+            .attr('transform', 'rotate(-90)');
+
+        g.append('circle')
+            .attr('r', 7)
+            .attr('fill', '#de2d26');
+
+        var percentageText = g.append("text")
+            .attr("class", "percentage")
+            .attr("x", 0)
+            .attr("y", -needleLen - -220);
+
+        var currentEndAngle = -Math.PI / 2; // Initialize current angle for foreground and needle
+
+        // Define the gradient dynamically
+        var gradient = svg.append("defs")
+          .append("linearGradient")
+          .attr("id", "gaugeGradient")
+          .attr("x1", "0%")
+          .attr("y1", "100%")
+          .attr("x2", "0%")
+          .attr("y2", "0%");
+
+        // Fetch data and add interactivity
+        d3.csv("https://raw.githubusercontent.com/Sandeep1349/DVProject/main/collegePlace.csv").then(function(data) {
+            function updateData(filter) {
+                var filteredData = data;
+                if (filter && filter !== "All Students") {
+                    // Filter data for the selected stream
+                    filteredData = data.filter(d => d.Stream === filter);
+                }
+                var placedCount, totalStudents, placedPercentage;
+
+                if (filter === "All Students") {
+                    // Calculate placement percentage based on all available data
+                    placedCount = d3.sum(data, d => d.PlacedOrNot == '1' ? 1 : 0);
+                    totalStudents = data.length;
+                    placedPercentage = (placedCount / totalStudents) * 100;
+                } else {
+                    placedCount = d3.sum(filteredData, d => d.PlacedOrNot == '1' ? 1 : 0);
+                    totalStudents = filteredData.length;
+                    placedPercentage = (placedCount / totalStudents) * 100;
+                }
+
+                var newAngle = angleScale(placedPercentage);
+
+                foreground.transition()
+                    .duration(1500)
+                    .attrTween("d", function(d) {
+                        var interpolate = d3.interpolate(d.endAngle, newAngle);
+                        return function(t) { d.endAngle = interpolate(t); return arc(d); };
+                    });
+
+                needle.transition()
+                    .duration(1500)
+                    .attrTween("transform", function() {
+                        var interpolate = d3.interpolate(currentEndAngle, newAngle);
+                        return function(t) { return 'rotate(' + (interpolate(t) * 180 / Math.PI) + ')'; };
+                    });
+
+                // Update gradient stops
+                gradient.selectAll("stop").remove();
+                gradient.append("stop")
+                    .attr("offset", "0%")
+                    .attr("stop-color", "#b2fab4");
+                gradient.append("stop")
+                    .attr("offset", placedPercentage + "%")
+                    .attr("stop-color", "#009688");
+
+                percentageText.text(placedPercentage.toFixed(2) + "%");
+
+                // Update currentEndAngle for next transition
+                currentEndAngle = newAngle;
+            }
+
+            // Initial update
+            updateData();
+
+            // Button interactions
+            d3.select("#dashboardBtn").on("click", function() { updateData("All Students"); });
+            d3.select("#streamCS").on("click", function() { updateData("Computer Science"); });
+            d3.select("#streamIT").on("click", function() { updateData("Information Technology"); });
+            d3.select("#streamMech").on("click", function() { updateData("Mechanical"); });
+            d3.select("#streamCivil").on("click", function() { updateData("Civil"); });
+            d3.select("#streamElec").on("click", function() { updateData("Electrical"); });
+            // Message listener
+            window.addEventListener('message', function(event) {
+                if (event.data.action === 'filter') {
+                    updateData(event.data.stream);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Internships and Placements Chart</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #ffffff;
+            color: #333;
+        }
+        .line, .area {
+            fill: none;
+            stroke-width: 3px;
+            opacity: 0.5;
+        }
+        .line.active, .area.active {
+            opacity: 1;
+            stroke-width: 5px;
+        }
+        .legend {
+            font-size: 14px;
+            font-family: 'Arial', sans-serif;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+        .legend rect {
+            width: 18px;
+            height: 18px;
+            stroke: #fff;
+            stroke-width: 2px;
+        }
+        .axis path, .axis line {
+            fill: none;
+            stroke: #ddd;
+            shape-rendering: crispEdges;
+        }
+        .axis text {
+            font-size: 12px;
+            color: #666;
+        }
+        .shadow {
+            filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.1));
+        }
+        .tooltip {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .button-container {
+            margin-bottom: 10px;
+        }
+        .sidebar-btn {
+            padding: 5px 10px;
+            margin: 0 5px;
+            cursor: pointer;
+            background-color: #f4f4f4;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .sidebar-btn.active {
+            background-color: #ddd;
+        }
+        .dot {
+            fill: red;
+            stroke: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h2>INTERNSHIPS AND PLACEMENTS</h2>
+    <div id="my_dataviz"></div>
+    <script>
+        // Set dimensions and margins for the chart
+        const margin = {top: 40, right: 30, bottom: 50, left: 50},
+            width = 1500 - margin.left - margin.right,
+            height = 300 - margin.top - margin.bottom;
+
+        // Append the svg object to the body of the page
+        const svg = d3.select("#my_dataviz")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Read the data
+        d3.csv("https://raw.githubusercontent.com/Sandeep1349/DVProject/main/collegePlace.csv", d => ({
+            Stream: d.Stream,
+            Internships: +d.Internships,
+            PlacedOrNot: +d.PlacedOrNot
+        })).then(function(data) {
+            // Group data by Stream and count internships and placements
+            const aggregatedData = d3.rollups(data, v => ({
+                internships: d3.sum(v, d => d.Internships),
+                placements: d3.sum(v, d => d.PlacedOrNot)
+            }), d => d.Stream)
+            .map(([key, value]) => ({ Stream: key, ...value }));
+
+            // Create scales
+            const x = d3.scaleBand()
+                .domain(aggregatedData.map(d => d.Stream))
+                .range([0, width])
+                .padding(0.1);
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(aggregatedData, d => Math.max(d.internships, d.placements))])
+                .range([height, 0]);
+
+            // Add X and Y axis
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .attr("color", "#666")
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-.8em")
+                .attr("dy", ".15em")
+                .attr("transform", "rotate(-10)");
+
+            svg.append("g")
+                .call(d3.axisLeft(y))
+                .attr("color", "#666");
+
+            // Define line and area generators for internships and placements
+            const lineInternships = d3.line()
+                .x(d => x(d.Stream) + x.bandwidth() / 2)
+                .y(d => y(d.internships))
+                .curve(d3.curveCatmullRom);
+
+            const areaInternships = d3.area()
+                .x(d => x(d.Stream) + x.bandwidth() / 2)
+                .y0(height)
+                .y1(d => y(d.internships))
+                .curve(d3.curveCatmullRom);
+
+            const linePlacements = d3.line()
+                .x(d => x(d.Stream) + x.bandwidth() / 2)
+                .y(d => y(d.placements))
+                .curve(d3.curveCatmullRom);
+
+            const areaPlacements = d3.area()
+                .x(d => x(d.Stream) + x.bandwidth() / 2)
+                .y0(height)
+                .y1(d => y(d.placements))
+                .curve(d3.curveCatmullRom);
+
+            // Add lines and areas for internships and placements
+            svg.append("path")
+                .datum(aggregatedData)
+                .attr("class", "line shadow")
+                .attr("d", lineInternships)
+                .style("stroke", "#3498db"); // Blue stroke for internships
+
+            svg.append("path")
+                .datum(aggregatedData)
+                .attr("class", "area")
+                .attr("d", areaInternships)
+                .style("fill", "rgba(52, 152, 219, 0.3)"); // Light blue fill for internships
+
+            svg.append("path")
+                .datum(aggregatedData)
+                .attr("class", "line shadow")
+                .attr("d", linePlacements)
+                .style("stroke", "#2ecc71"); // Green stroke for placements
+
+            svg.append("path")
+                .datum(aggregatedData)
+                .attr("class", "area")
+                .attr("d", areaPlacements)
+                .style("fill", "rgba(46, 204, 113, 0.3)"); // Light green fill for placements
+
+            // Function to reset the chart view
+            function resetView() {
+                svg.selectAll('.dot').remove();
+                svg.selectAll('.legendText').remove();
+                svg.selectAll('.line, .area')
+                    .transition()
+                    .style('opacity', 1); // Reset opacity to full for all lines and areas
+            }
+
+            // Add interaction for buttons
+            document.querySelectorAll('.sidebar-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    resetView();
+                    document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    const streamFilter = this.id; // Using button id as stream filter
+                    filterStream(streamFilter);
+                });
+            });
+
+            // Function to filter data based on stream
+            window.filterStream = function(stream) {
+                resetView();
+                document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('active'));
+                
+                if (stream === 'All Students') {
+                    // Add 'active' class to the 'All Students' button
+                    const allStudentsBtn = document.getElementById('All Students');
+                    if (allStudentsBtn) {
+                        allStudentsBtn.classList.add('active');
+                    }
+
+                    // Reset opacity to 1 for all lines and areas
+                    svg.selectAll('.line, .area')
+                        .transition()
+                        .style('opacity', 1);
+                } else {
+                    // Add 'active' class to the selected stream button
+                    const streamBtn = document.getElementById(`${stream.replace(' ', '')}`);
+                    if (streamBtn) {
+                        streamBtn.classList.add('active');
+                    }
+
+                    // Filter data and adjust opacity for lines and areas
+                    svg.selectAll('.line, .area')
+                        .transition()
+                        .style('opacity', d => d.Stream === stream ? 1 : 0.1);
+
+                    const filteredData = aggregatedData.filter(d => d.Stream === stream);
+                    filteredData.forEach(data => {
+                        // Add circles and texts for internships and placements
+                        svg.append('circle')
+                            .attr('cx', x(data.Stream) + x.bandwidth() / 2)
+                            .attr('cy', y(data.internships))
+                            .attr('r', 5)
+                            .attr('class', 'dot')
+                            .style('fill', '#3498db');
+
+                        svg.append('text')
+                            .attr('x', x(data.Stream) + x.bandwidth() / 2 + 10)
+                            .attr('y', y(data.internships))
+                            .attr('dy', '.35em') // vertically center the text
+                            .text(`Internships: ${data.internships}`)
+                            .style('font-size', '10px')
+                            .style('fill', '#3498db')
+                            .attr('class', 'legendText'); // Add class for legend text
+
+                        svg.append('circle')
+                            .attr('cx', x(data.Stream) + x.bandwidth() / 2)
+                            .attr('cy', y(data.placements))
+                            .attr('r', 5)
+                            .attr('class', 'dot')
+                            .style('fill', '#2ecc71');
+
+                        svg.append('text')
+                            .attr('x', x(data.Stream) + x.bandwidth() / 2 + 10)
+                            .attr('y', y(data.placements))
+                            .attr('dy', '.35em') // vertically center the text
+                            .text(`Placements: ${data.placements}`)
+                            .style('font-size', '10px')
+                            .style('fill', '#2ecc71')
+                            .attr('class', 'legendText'); // Add class for legend text
+                    });
+                }
+            };
+
+            window.addEventListener('message', (event) => {
+            if (event.data.action === "filter") {
+                filterStream(event.data.stream);
+            }
+        });
+        });
+    </script>
+    
+</body>
+</html>
