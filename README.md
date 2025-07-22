@@ -51,7 +51,7 @@ By exploring this data visually, the project supports **students, universities, 
 3. **Gauge Chart – Overall Placement Percentage**
    - Displays total percentage of students placed.
    - Provides a quick summary of overall performance.
-![Guage Chart](images/guagechart.png)
+![Guage Chart](images/gaugechart.png)
 
 4. **Dashboard**
    - Combines multiple visualizations into one interface.
