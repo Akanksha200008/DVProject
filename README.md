@@ -14,7 +14,7 @@ By exploring this data visually, the project supports **students, universities, 
 
 ## 🗂️ Dataset Overview
 
-- **Source:** [Kaggle - Engineering Placements Prediction Dataset](https://www.kaggle.com/)
+- **Source:** [Kaggle - Engineering Placements Prediction Dataset](https://www.kaggle.com/datasets/tejashvi14/engineering-placements-prediction/data)
 - **Size:** ~10KB
 - **Features Used:**
   - `Age`: Age of the student
