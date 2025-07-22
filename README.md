@@ -41,18 +41,22 @@ By exploring this data visually, the project supports **students, universities, 
 1. **Bar Chart – Placement Status by Stream**
    - Compares placement success rates across engineering disciplines.
    - Helps identify streams with higher or lower placement percentages.
+![Bar Chart](images/barchart.png)
 
 2. **Area Chart – Internships vs. Placements**
    - Shows how the number of internships correlates with placement outcomes.
    - Useful to understand how hands-on experience affects employability by stream.
+![Area Chart](images/areachart.png)
 
 3. **Gauge Chart – Overall Placement Percentage**
    - Displays total percentage of students placed.
    - Provides a quick summary of overall performance.
+![Guage Chart](images/guagechart.png)
 
 4. **Dashboard**
    - Combines multiple visualizations into one interface.
    - Helps decision-makers explore placement patterns interactively.
+![Dashboard](images/dashboard.png)
 
 ---
 
