@@ -60,13 +60,6 @@ By exploring this data visually, the project supports **students, universities, 
 
 ---
 
-## 🛠️ Technologies Used
-
-- **Python**
-- **Pandas** – Data manipulation and analysis
-- **Matplotlib / Plotly / Seaborn** – Visualization
-- **Jupyter Notebook** – Interactive development
-
 ---
 
 ## 📈 Key Insights
